@@ -1,0 +1,111 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h1>📋 Redmine Backlog</h1>
+    <div class="filters">
+
+      <!-- STATUS -->
+      <select [(ngModel)]="filterStatus">
+        <option value="all">All statuses</option>
+        <option value="new">New</option>
+        <option value="in progress">In progress</option>
+        <option value="resolved">Resolved</option>
+        <option value="closed">Closed</option>
+      </select>
+
+      <!-- PRIORITY -->
+      <select [(ngModel)]="filterPriority">
+
+        <option value="all">All priorities</option>
+
+        <option value="1">Immediate</option>
+        <option value="2">Urgent</option>
+        <option value="3">High</option>
+        <option value="4">Normal</option>
+        <option value="5">Low</option>
+
+        <!-- 👉 BELANGRIJK -->
+        <option value="unknown">New / Unclassified (/)</option>
+
+      </select>
+
+      <!-- AGE -->
+      <select [(ngModel)]="filterDay">
+        <option value="today">Today</option>
+        <option value="week">Last 7 days</option>
+        <option value="month">Last 30 days</option>
+      </select>
+
+    </div>
+
+    @if (!loading) {
+      <span class="issue-count">{{ issues.length }} issues</span>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading issues...</p>
+    </div>
+  }
+
+  @if (error) {
+    <div class="error">⚠️ {{ error }}</div>
+  }
+
+  @if (!loading && !error) {
+    <div class="grid">
+
+      @for (issue of getFilteredIssues(); track issue.id) {
+        <div class="card" [ngClass]="getAgeClass(issue)">
+
+          <div class="card-header">
+
+  <span class="tracker">
+    {{ issue.tracker.name }}
+  </span>
+
+            <span class="priority"
+                  [ngClass]="getPriorityClass(issue.priority)">
+  {{ issue.priority.name }}
+</span>
+
+            <span class="status" [ngClass]="getStatusClass(issue.status.name)">
+    {{ issue.status.name }}
+  </span>
+
+          </div>
+
+          <div class="card-body">
+            <a class="issue-id"
+               href="https://redmine.trustteam.be/issues/{{ issue.id }}"
+               target="_blank">
+              #{{ issue.id }}
+            </a>
+
+            <h2 class="subject">{{ issue.subject }}</h2>
+            <p class="project">{{ issue.project.name }}</p>
+          </div>
+
+          <!-- 📝 NOTES -->
+          <div class="note-section">
+            <textarea
+              [(ngModel)]="notes[issue.id]"
+              (ngModelChange)="saveNote()"
+              placeholder="Type your question / note..."
+            ></textarea>
+          </div>
+
+          <div class="card-footer">
+            <span class="author">👤 {{ issue.author.name }}</span>
+            <span class="date">
+              {{ issue.created_on | date: 'dd/MM/yyyy' }}
+            </span>
+          </div>
+
+        </div>
+      }
+
+    </div>
+  }
+</div>
