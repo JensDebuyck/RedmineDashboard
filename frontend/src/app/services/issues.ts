@@ -5,7 +5,7 @@ import { Issue } from '../issue.model';
 
 @Injectable({ providedIn: 'root' })
 export class IssueService {
-  private apiUrl = 'http://localhost:3000/api/issues';
+  private apiUrl = 'http://100.71.174.16:3000/api/issues';
 
   constructor(private http: HttpClient) {}
 
