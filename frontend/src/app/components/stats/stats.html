@@ -1,0 +1,33 @@
+
+
+<div class="stats">
+
+  <nav class="nav-links">
+    <a routerLink="/dashboard" routerLinkActive="active">📋 Tickets</a>
+    <a routerLink="/stats" routerLinkActive="active">📊 Stats</a>
+  </nav>
+
+  <h1>📊 Ticket Analytics</h1>
+
+  <div class="metric-card">
+
+    <div class="card-header">
+      <h2>🗓️ Last 7 days</h2>
+      <small>{{ dailyStats.length }} days loaded</small>
+    </div>
+
+    @for (d of dailyStats; track d.date) {
+
+      <div class="metric-row" [class.today]="isToday(d.date)">
+
+        <span>{{ formatDisplayDate(d.date) }}</span>
+
+        <strong>{{ d.count }}</strong>
+
+      </div>
+
+    }
+
+  </div>
+
+</div>

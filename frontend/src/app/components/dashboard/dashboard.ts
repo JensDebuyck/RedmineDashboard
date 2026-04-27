@@ -3,11 +3,12 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IssueService } from '../../services/issues';
 import { Issue } from '../../issue.model';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, FormsModule],
+  imports: [CommonModule, DatePipe, FormsModule, RouterLinkActive, RouterLink],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
 })
@@ -151,4 +152,8 @@ export class DashboardComponent implements OnInit {
       return true;
     });
   }
+
+
 }
+
+

@@ -1,6 +1,6 @@
 .dashboard {
   padding: 20px;
-  font-family: Arial, sans-serif;
+  font-family: Helvetica, sans-serif;
   background: #f7f8fa;
 }
 
@@ -267,4 +267,44 @@
   border-radius: 6px;
   border: 1px solid #ccc;
   font-family: inherit;
+}
+
+.metrics {
+  margin: 15px 0;
+  display: flex;
+  gap: 15px;
+}
+
+.metric-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  width: 300px;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+.nav-links {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #555;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.nav-links a.active {
+  background: #2196f3;
+  color: white;
 }

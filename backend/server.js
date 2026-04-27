@@ -6,7 +6,7 @@ import fetch from 'node-fetch';
 
 let cache = null;
 let cacheTime = null;
-const CACHE_TTL = 60 * 1000; // 60 seconden
+const CACHE_TTL = 5 * 60 * 1000; // 5 minuten
 
 const app = express();
 const PORT = process.env.PORT || 3000;
