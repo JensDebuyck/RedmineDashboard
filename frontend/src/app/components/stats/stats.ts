@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {RouterModule} from '@angular/router';
 import { IssueService } from '../../services/issues';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-stats',
@@ -15,7 +16,7 @@ export class StatsComponent implements OnInit {
   issues: any[] = [];
   dailyStats: { date: string; count: number }[] = [];
 
-  constructor(private issueService: IssueService) {
+  constructor(private issueService: IssueService, private cdr: ChangeDetectorRef) {
     console.log('🚀 StatsComponent loaded');
   }
 
@@ -74,6 +75,8 @@ export class StatsComponent implements OnInit {
     }));
 
     console.log('✅ FINAL dailyStats:', this.dailyStats);
+
+    this.cdr.detectChanges();
   }
 
   private getLast7Days(): string[] {

@@ -16,7 +16,7 @@
       <small>{{ dailyStats.length }} days loaded</small>
     </div>
 
-    @for (d of dailyStats; track d.date) {
+    @for (d of dailyStats; track $index) {
 
       <div class="metric-row" [class.today]="isToday(d.date)">
 
