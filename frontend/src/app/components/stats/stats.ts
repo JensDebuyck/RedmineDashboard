@@ -1,8 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {RouterModule} from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { IssueService } from '../../services/issues';
-import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-stats',
@@ -13,79 +12,120 @@ import { ChangeDetectorRef } from '@angular/core';
 })
 export class StatsComponent implements OnInit {
 
-  issues: any[] = [];
   dailyStats: { date: string; count: number }[] = [];
 
-  constructor(private issueService: IssueService, private cdr: ChangeDetectorRef) {
-    console.log('🚀 StatsComponent loaded');
-  }
+  private STORAGE_STATS = 'stats_daily';
+  private STORAGE_SEEN = 'stats_seen_ids';
+
+  private statsStore: Record<string, number> = {};
+  private seenIds: Set<number> = new Set();
+
+  private refreshInterval: any;
+
+  constructor(
+    private issueService: IssueService,
+    private cdr: ChangeDetectorRef // ✅ belangrijk
+  ) {}
 
   ngOnInit(): void {
+    this.loadFromStorage();
     this.loadIssues();
+
+    this.refreshInterval = setInterval(() => {
+      console.log("Auto refresh");
+      this.loadIssues();
+    },3000);
   }
 
+  ngOnDestroy(): void {
+    if(this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+  }
+
+  // -----------------------------
+  // STORAGE
+  // -----------------------------
+  private loadFromStorage(): void {
+    const savedStats = localStorage.getItem(this.STORAGE_STATS);
+    const savedSeen = localStorage.getItem(this.STORAGE_SEEN);
+
+    this.statsStore = savedStats ? JSON.parse(savedStats) : {};
+    this.seenIds = new Set(savedSeen ? JSON.parse(savedSeen) : []);
+  }
+
+  private saveToStorage(): void {
+    localStorage.setItem(this.STORAGE_STATS, JSON.stringify(this.statsStore));
+    localStorage.setItem(this.STORAGE_SEEN, JSON.stringify([...this.seenIds]));
+  }
+
+  // -----------------------------
+  // FETCH + COUNT
+  // -----------------------------
   private loadIssues(): void {
+
     console.log('📡 Loading issues...');
 
     this.issueService.getIssues().subscribe({
       next: (data) => {
 
-        console.log('📦 FULL RESPONSE:', data);
-        console.log('📦 ISSUES:', data?.issues);
+        const issues = data?.issues ?? [];
+        console.log('📦 Issues fetched:', issues.length);
 
-        this.issues = data?.issues ?? [];
+        let newCount = 0;
 
-        console.log('📊 ASSIGNED this.issues length:', this.issues.length);
+        for (const issue of issues) {
 
-        this.buildDailyStats();
+          if (!issue?.id || !issue?.created_on) continue;
 
-        console.log('✅ AFTER BUILD:', this.dailyStats);
+          // alleen nieuwe tickets tellen
+          if (this.seenIds.has(issue.id)) continue;
+
+          this.seenIds.add(issue.id);
+          newCount++;
+
+          const dateKey = this.getDateKey(issue.created_on);
+
+          this.statsStore[dateKey] = (this.statsStore[dateKey] || 0) + 1;
+        }
+
+        console.log('🆕 New tickets detected:', newCount);
+
+        this.saveToStorage();
+        this.buildDisplayStats();
+
+        // 🔥 BELANGRIJK voor @for rendering
+        this.cdr.detectChanges();
       },
-
       error: (err) => {
-        console.error('❌ API ERROR:', err);
+        console.error('❌ Failed to load issues', err);
       }
     });
   }
 
-  private buildDailyStats(): void {
-
-    console.log('📊 Building daily stats...');
-
-    const perDay: Record<string, number> = {};
-
-    for (const issue of this.issues) {
-
-      if (!issue?.created_on) continue;
-
-      const key = this.getDateKey(issue.created_on);
-
-      perDay[key] = (perDay[key] || 0) + 1;
-    }
-
-    console.log('📈 perDay:', perDay);
-
+  // -----------------------------
+  // BUILD UI DATA
+  // -----------------------------
+  private buildDisplayStats(): void {
     const last7Days = this.getLast7Days();
-
-    console.log('📅 last7Days:', last7Days);
 
     this.dailyStats = last7Days.map(date => ({
       date,
-      count: perDay[date] || 0
+      count: this.statsStore[date] || 0
     }));
 
-    console.log('✅ FINAL dailyStats:', this.dailyStats);
-
-    this.cdr.detectChanges();
+    console.log('📊 Display stats:', this.dailyStats);
   }
 
+  // -----------------------------
+  // HELPERS
+  // -----------------------------
   private getLast7Days(): string[] {
     const days: string[] = [];
 
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-
       days.push(this.getDateKey(d));
     }
 
@@ -103,14 +143,11 @@ export class StatsComponent implements OnInit {
   }
 
   isToday(date: string): boolean {
-    const today = this.getDateKey(new Date());
-    return today === date;
+    return date === this.getDateKey(new Date());
   }
 
   formatDisplayDate(date: string): string {
-    const d = new Date(date);
-
-    return d.toLocaleDateString('nl-BE', {
+    return new Date(date).toLocaleDateString('nl-BE', {
       weekday: 'short',
       day: '2-digit',
       month: 'short'

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IssueService } from '../../services/issues';
 import { Issue } from '../../issue.model';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import {NotificationService} from '../../services/notification';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,14 +25,24 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private issueService: IssueService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
     this.loadNotes();
 
+    this.notificationService.requestPermission();
+
+
+
     this.issueService.getIssues().subscribe({
       next: (data) => {
+
+        const issues = data.issues ?? [];
+
+        this.notificationService.checkNewTickets(issues);
+
         this.issues = data.issues;
         this.loading = false;
         this.cdr.detectChanges();
