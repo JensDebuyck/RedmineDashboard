@@ -32,7 +32,7 @@ export class StatsComponent implements OnInit {
     this.loadIssues();
 
     this.refreshInterval = setInterval(() => {
-      console.log("Auto refresh");
+
       this.loadIssues();
     },3000);
   }
@@ -64,13 +64,13 @@ export class StatsComponent implements OnInit {
   // -----------------------------
   private loadIssues(): void {
 
-    console.log('📡 Loading issues...');
+
 
     this.issueService.getIssues().subscribe({
       next: (data) => {
 
         const issues = data?.issues ?? [];
-        console.log('📦 Issues fetched:', issues.length);
+
 
         let newCount = 0;
 
@@ -89,7 +89,7 @@ export class StatsComponent implements OnInit {
           this.statsStore[dateKey] = (this.statsStore[dateKey] || 0) + 1;
         }
 
-        console.log('🆕 New tickets detected:', newCount);
+
 
         this.saveToStorage();
         this.buildDisplayStats();
@@ -114,7 +114,7 @@ export class StatsComponent implements OnInit {
       count: this.statsStore[date] || 0
     }));
 
-    console.log('📊 Display stats:', this.dailyStats);
+
   }
 
   // -----------------------------
