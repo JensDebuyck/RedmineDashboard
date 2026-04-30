@@ -6,40 +6,56 @@ import { Injectable } from '@angular/core';
 export class NotificationService {
 
   private seenIds = new Set<number>();
-
   private initialized = false;
 
   constructor() {
     console.log('🔔 NotificationService initialized');
+
+    // 🧠 optional: restore memory from sessionStorage (fix reload issues)
+    const saved = sessionStorage.getItem('seenIds');
+    if (saved) {
+      try {
+        const ids: number[] = JSON.parse(saved);
+        this.seenIds = new Set(ids);
+        this.initialized = true;
+      } catch (e) {
+        console.warn('Failed to restore seenIds');
+      }
+    }
   }
 
   requestPermission(): void {
     if (!('Notification' in window)) return;
+
+    // 🧠 only ask if not decided yet (fix Chrome re-deny issues)
+    if (Notification.permission !== 'default') {
+      console.log('🔔 Permission already set:', Notification.permission);
+      return;
+    }
 
     Notification.requestPermission().then(p => {
       console.log('🔔 Permission:', p);
     });
   }
 
-  // 🆕 MAIN LOGIC
   checkNewTickets(issues: any[]): void {
 
-    if (Notification.permission !== 'granted') return;
+    // ❌ still allow tracking even if notifications are blocked
+    const notificationsAllowed = Notification.permission === 'granted';
 
+    // 🧠 first run = baseline
     if (!this.initialized) {
       for (const issue of issues) {
-        if(issue?.id){
+        if (issue?.id) {
           this.seenIds.add(issue.id);
         }
       }
 
       this.initialized = true;
-
-      console.log("Baseline initialized - no notifications on first load");
+      this.persist();
+      console.log('🧠 Baseline initialized');
       return;
     }
-
-
 
     let newTickets: any[] = [];
 
@@ -47,15 +63,25 @@ export class NotificationService {
 
       if (!issue?.id) continue;
 
-      // 🧠 enkel nieuwe tickets
       if (!this.seenIds.has(issue.id)) {
         this.seenIds.add(issue.id);
         newTickets.push(issue);
       }
     }
 
+    this.persist();
+
     if (newTickets.length > 0) {
-      this.showNotification(newTickets);
+
+      console.log('🆕 New tickets detected:', newTickets.length);
+
+      // 🔔 only show browser notification if allowed
+      if (notificationsAllowed) {
+        this.showNotification(newTickets);
+      } else {
+        // fallback: still log (option for later toast UI)
+        console.log('🔕 Notifications blocked, but new tickets detected');
+      }
     }
   }
 
@@ -76,5 +102,12 @@ export class NotificationService {
       icon: '/favicon.ico',
       silent: true
     });
+  }
+
+  private persist(): void {
+    sessionStorage.setItem(
+      'seenIds',
+      JSON.stringify([...this.seenIds])
+    );
   }
 }

@@ -48,6 +48,10 @@
     }
   </div>
 
+  <button class="notif-btn" (click)="notificationService.requestPermission()">
+    🔔 Notifications
+  </button>
+
   <!-- LOADING -->
   @if (loading) {
     <div class="loading">

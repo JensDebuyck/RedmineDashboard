@@ -26,7 +26,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     private issueService: IssueService,
     private cdr: ChangeDetectorRef,
-    private notificationService: NotificationService
+    public notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
