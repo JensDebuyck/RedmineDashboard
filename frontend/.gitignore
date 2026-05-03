@@ -48,3 +48,7 @@ frontend/dist/
 node_modules/
 *.exe
 *.blockmap
+# Environment
+.env
+.env.development
+.env.production

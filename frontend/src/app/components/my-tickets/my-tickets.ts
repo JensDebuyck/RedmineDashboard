@@ -1,22 +1,26 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MyTicketsService } from '../../services/my-tickets';
 import { Issue } from '../../issue.model';
 
 interface TicketRow {
-  issue:        Issue;
+  issue: Issue;
+
   totalSeconds: number;
-  // actieve timer state
-  running:      boolean;
-  entryId:      number | null;
-  elapsed:      number; // seconden sinds start huidige sessie
+
+  running: boolean;
+  entryId: number | null;
+
+  sessionSeconds: number;
+  lastSessionSeconds: number;
 }
 
 @Component({
   selector: 'app-my-tickets',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
   templateUrl: './my-tickets.html',
   styleUrls: ['./my-tickets.css'],
 })
@@ -26,6 +30,8 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
+  filterStatus: string = 'all';
+
   private tickInterval: any;
 
   constructor(
@@ -33,19 +39,20 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     this.loadTickets();
 
-    // ⏱️ elke seconde elapsed updaten voor actieve timers
     this.tickInterval = setInterval(() => {
-      let hasRunning = false;
+      let changed = false;
+
       for (const row of this.rows) {
         if (row.running) {
-          row.elapsed++;
-          hasRunning = true;
+          row.sessionSeconds += 1;
+          changed = true;
         }
       }
-      if (hasRunning) this.cdr.detectChanges();
+
+      if (changed) this.cdr.detectChanges();
     }, 1000);
   }
 
@@ -58,16 +65,24 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
       next: async (data) => {
         const issues = data.issues ?? [];
 
-        this.rows = await Promise.all(
-          issues.map(async (issue) => ({
-            issue,
-            totalSeconds: await (window as any).electronAPI.getTotalTime(issue.id),
-            running:      false,
-            entryId:      null,
-            elapsed:      0,
-          }))
+        const newRows: TicketRow[] = await Promise.all(
+          issues.map(async (issue) => {
+            const existing = this.rows.find(r => r.issue.id === issue.id);
+
+            return {
+              issue,
+              totalSeconds: await (window as any).electronAPI.getTotalTime(issue.id),
+
+              running: existing?.running ?? false,
+              entryId: existing?.entryId ?? null,
+
+              sessionSeconds: existing?.sessionSeconds ?? 0,
+              lastSessionSeconds: existing?.lastSessionSeconds ?? 0,
+            };
+          })
         );
 
+        this.rows = newRows;
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -80,42 +95,57 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     });
   }
 
+  getFilteredRows(): TicketRow[] {
+    return this.rows.filter(row => {
+      if (this.filterStatus === 'all') return true;
+      return row.issue.status.name === this.filterStatus;
+    });
+  }
+
   async startTimer(row: TicketRow): Promise<void> {
     const entryId = await (window as any).electronAPI.startTimer(row.issue.id);
+
     row.entryId = entryId;
-    row.elapsed = 0;
+    row.sessionSeconds = 0;
     row.running = true;
+
     this.cdr.detectChanges();
   }
 
   async stopTimer(row: TicketRow): Promise<void> {
     if (row.entryId === null) return;
 
-    await (window as any).electronAPI.stopTimer(row.entryId, row.elapsed);
+    await (window as any).electronAPI.stopTimer(row.entryId, row.sessionSeconds);
 
-    row.totalSeconds += row.elapsed;
-    row.elapsed  = 0;
-    row.running  = false;
-    row.entryId  = null;
+    row.totalSeconds += row.sessionSeconds;
+    row.lastSessionSeconds = row.sessionSeconds;
+
+    row.sessionSeconds = 0;
+    row.running = false;
+    row.entryId = null;
+
     this.cdr.detectChanges();
   }
 
-  // HH:MM:SS formatter
   formatTime(seconds: number): string {
+    if (!seconds || isNaN(seconds)) return '00:00:00';
+
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
+
     return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
   }
 
   getStatusClass(statusName: string): string {
     const map: Record<string, string> = {
-      New:           'status-new',
+      New: 'status-new',
       'In Progress': 'status-progress',
-      Resolved:      'status-resolved',
-      Closed:        'status-closed',
-      Feedback:      'status-feedback',
+      Resolved: 'status-resolved',
+      Closed: 'status-closed',
+      Feedback: 'status-feedback',
     };
+
     return map[statusName] ?? 'status-default';
   }
 
@@ -128,5 +158,23 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
       case 5: return 'prio-low';
     }
     return 'prio-unknown';
+  }
+
+  getAgeInDays(row: TicketRow): number {
+    const created = new Date(row.issue.created_on);
+    const now = new Date();
+
+    return Math.floor(
+      (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
+    );
+  }
+
+  getAgeClass(row: TicketRow): string {
+    const age = this.getAgeInDays(row);
+
+    if (age >= 10) return 'ticket-red';
+    if (age >= 7) return 'ticket-orange';
+    if (age >= 5) return 'ticket-yellow';
+    return 'ticket-green';
   }
 }
