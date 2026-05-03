@@ -7,6 +7,7 @@
     <nav class="nav-links">
       <a routerLink="/dashboard" routerLinkActive="active">📋 Dashboard</a>
       <a routerLink="/stats" routerLinkActive="active">📊 Stats</a>
+      <a routerLink="/notes" routerLinkActive="active">📝 Notes</a>
     </nav>
 
 
@@ -108,11 +109,12 @@
 
           <!-- NOTES -->
           <div class="note-section">
-            <textarea
-              [(ngModel)]="notes[issue.id]"
-              (ngModelChange)="saveNote()"
-              placeholder="Type your question / note...">
-            </textarea>
+            <textarea [(ngModel)]="issue.note"></textarea>
+
+            <button (click)="saveNote(issue, issue.note || '')"
+                    [disabled]="saving">
+              💾 Save
+            </button>
           </div>
 
           <div class="card-footer">

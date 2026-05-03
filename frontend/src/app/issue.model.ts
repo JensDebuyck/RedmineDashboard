@@ -20,4 +20,5 @@ export interface Issue {
   created_on: string;
   updated_on: string;
   closed_on: string | null;
+  note?: string;
 }

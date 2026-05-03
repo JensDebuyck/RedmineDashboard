@@ -10,96 +10,88 @@ import { IssueService } from '../../services/issues';
   templateUrl: './stats.html',
   styleUrls: ['./stats.css']
 })
-export class StatsComponent implements OnInit {
+export class StatsComponent implements OnInit, OnDestroy {
 
   dailyStats: { date: string; count: number }[] = [];
 
-  private STORAGE_STATS = 'stats_daily';
-  private STORAGE_SEEN = 'stats_seen_ids';
-
   private statsStore: Record<string, number> = {};
   private seenIds: Set<number> = new Set();
-
   private refreshInterval: any;
 
   constructor(
     private issueService: IssueService,
-    private cdr: ChangeDetectorRef // ✅ belangrijk
+    private cdr: ChangeDetectorRef
   ) {}
 
-  ngOnInit(): void {
-    this.loadFromStorage();
+  async ngOnInit(): Promise<void> {
+    await this.loadFromSQLite();
     this.loadIssues();
-
-    this.refreshInterval = setInterval(() => {
-
-      this.loadIssues();
-    },3000);
+    this.refreshInterval = setInterval(() => this.loadIssues(), 30000);
   }
 
   ngOnDestroy(): void {
-    if(this.refreshInterval) {
-      clearInterval(this.refreshInterval);
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
+  }
+
+  // -----------------------------
+  // SQLITE
+  // -----------------------------
+  private async loadFromSQLite(): Promise<void> {
+    try {
+      const api = (window as any).electronAPI;
+      this.statsStore = await api.getStats();
+      const ids = await api.getSeenIds();
+      this.seenIds = new Set(ids);
+      console.log('✅ Stats geladen uit SQLite');
+    } catch (err) {
+      console.warn('⚠️ SQLite niet bereikbaar', err);
     }
   }
 
-  // -----------------------------
-  // STORAGE
-  // -----------------------------
-  private loadFromStorage(): void {
-    const savedStats = localStorage.getItem(this.STORAGE_STATS);
-    const savedSeen = localStorage.getItem(this.STORAGE_SEEN);
-
-    this.statsStore = savedStats ? JSON.parse(savedStats) : {};
-    this.seenIds = new Set(savedSeen ? JSON.parse(savedSeen) : []);
-  }
-
-  private saveToStorage(): void {
-    localStorage.setItem(this.STORAGE_STATS, JSON.stringify(this.statsStore));
-    localStorage.setItem(this.STORAGE_SEEN, JSON.stringify([...this.seenIds]));
+  private async saveToSQLite(newIds: number[]): Promise<void> {
+    try {
+      const api = (window as any).electronAPI;
+      // Stats opslaan
+      for (const [dateKey, count] of Object.entries(this.statsStore)) {
+        await api.saveStat(dateKey, count);
+      }
+      // Nieuwe seen IDs opslaan
+      if (newIds.length > 0) {
+        await api.saveSeenIds(newIds);
+      }
+    } catch (err) {
+      console.error('❌ Opslaan in SQLite mislukt', err);
+    }
   }
 
   // -----------------------------
   // FETCH + COUNT
   // -----------------------------
   private loadIssues(): void {
-
-
-
     this.issueService.getIssues().subscribe({
-      next: (data) => {
-
+      next: async (data) => {
         const issues = data?.issues ?? [];
-
-
-        let newCount = 0;
+        const newIds: number[] = [];
 
         for (const issue of issues) {
-
           if (!issue?.id || !issue?.created_on) continue;
-
-          // alleen nieuwe tickets tellen
           if (this.seenIds.has(issue.id)) continue;
 
           this.seenIds.add(issue.id);
-          newCount++;
+          newIds.push(issue.id);
 
           const dateKey = this.getDateKey(issue.created_on);
-
           this.statsStore[dateKey] = (this.statsStore[dateKey] || 0) + 1;
         }
 
+        if (newIds.length > 0) {
+          await this.saveToSQLite(newIds);
+        }
 
-
-        this.saveToStorage();
         this.buildDisplayStats();
-
-        // 🔥 BELANGRIJK voor @for rendering
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('❌ Failed to load issues', err);
-      }
+      error: (err) => console.error('❌ Failed to load issues', err)
     });
   }
 
@@ -107,39 +99,30 @@ export class StatsComponent implements OnInit {
   // BUILD UI DATA
   // -----------------------------
   private buildDisplayStats(): void {
-    const last7Days = this.getLast7Days();
-
-    this.dailyStats = last7Days.map(date => ({
+    this.dailyStats = this.getLast7Days().map(date => ({
       date,
       count: this.statsStore[date] || 0
     }));
-
-
   }
 
   // -----------------------------
   // HELPERS
   // -----------------------------
   private getLast7Days(): string[] {
-    const days: string[] = [];
-
-    for (let i = 6; i >= 0; i--) {
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push(this.getDateKey(d));
-    }
-
-    return days;
+      d.setDate(d.getDate() - (6 - i));
+      return this.getDateKey(d);
+    });
   }
 
   private getDateKey(input: string | Date): string {
     const d = new Date(input);
-
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, '0'),
+      String(d.getDate()).padStart(2, '0')
+    ].join('-');
   }
 
   isToday(date: string): boolean {

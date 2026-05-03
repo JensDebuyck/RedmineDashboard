@@ -1,0 +1,48 @@
+<div class="notes-page">
+
+  <nav class="nav-links">
+    <a routerLink="/dashboard" routerLinkActive="active">📋 Tickets</a>
+    <a routerLink="/stats"     routerLinkActive="active">📊 Stats</a>
+    <a routerLink="/notes"     routerLinkActive="active">📝 Notes</a>
+  </nav>
+
+  <h1>📝 Notes</h1>
+
+  @if (loading) {
+    <p>Loading notes...</p>
+  }
+
+  @if (!loading && notes.length === 0) {
+    <p>No notes found.</p>
+  }
+
+  @if (!loading && notes.length > 0) {
+    <div class="notes-grid">
+
+      @for (note of notes; track note.ticketId) {
+        <div class="note-card">
+
+          <div class="note-header">
+            <a href="https://redmine.trustteam.be/issues/{{ note.ticketId }}"
+               target="_blank"
+               class="ticket-id">
+              #{{ note.ticketId }}
+            </a>
+            <span class="customer">{{ note.customer }}</span>
+          </div>
+
+          <h3 class="note-title">{{ note.title }}</h3>
+
+          <p class="note-body">{{ note.note }}</p>
+
+          <div class="note-footer">
+            <small>🕒 {{ note.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+
+        </div>
+      }
+
+    </div>
+  }
+
+</div>

@@ -9,58 +9,34 @@ export class NotificationService {
   private initialized = false;
 
   constructor() {
-    console.log('🔔 NotificationService initialized');
-
-    // 🧠 optional: restore memory from sessionStorage (fix reload issues)
-    const saved = sessionStorage.getItem('seenIds');
-    if (saved) {
-      try {
-        const ids: number[] = JSON.parse(saved);
-        this.seenIds = new Set(ids);
-        this.initialized = true;
-      } catch (e) {
-        console.warn('Failed to restore seenIds');
-      }
-    }
   }
 
   requestPermission(): void {
     if (!('Notification' in window)) return;
 
-    // 🧠 only ask if not decided yet (fix Chrome re-deny issues)
-    if (Notification.permission !== 'default') {
-      console.log('🔔 Permission already set:', Notification.permission);
-      return;
-    }
-
     Notification.requestPermission().then(p => {
-      console.log('🔔 Permission:', p);
+
     });
   }
 
   checkNewTickets(issues: any[]): void {
 
-    // ❌ still allow tracking even if notifications are blocked
-    const notificationsAllowed = Notification.permission === 'granted';
+    if (Notification.permission !== 'granted') return;
 
-    // 🧠 first run = baseline
+    // 🧠 eerste keer = baseline
     if (!this.initialized) {
       for (const issue of issues) {
-        if (issue?.id) {
-          this.seenIds.add(issue.id);
-        }
+        if (issue?.id) this.seenIds.add(issue.id);
       }
 
       this.initialized = true;
-      this.persist();
-      console.log('🧠 Baseline initialized');
       return;
+
     }
 
-    let newTickets: any[] = [];
+    const newTickets: any[] = [];
 
     for (const issue of issues) {
-
       if (!issue?.id) continue;
 
       if (!this.seenIds.has(issue.id)) {
@@ -69,20 +45,11 @@ export class NotificationService {
       }
     }
 
-    this.persist();
-
     if (newTickets.length > 0) {
-
-      console.log('🆕 New tickets detected:', newTickets.length);
-
-      // 🔔 only show browser notification if allowed
-      if (notificationsAllowed) {
-        this.showNotification(newTickets);
-      } else {
-        // fallback: still log (option for later toast UI)
-        console.log('🔕 Notifications blocked, but new tickets detected');
-      }
+      this.showNotification(newTickets);
     }
+
+
   }
 
   private showNotification(newTickets: any[]): void {
@@ -99,15 +66,8 @@ export class NotificationService {
 
     new Notification(title, {
       body,
-      icon: '/favicon.ico',
+      icon: 'favicon.ico',
       silent: true
     });
-  }
-
-  private persist(): void {
-    sessionStorage.setItem(
-      'seenIds',
-      JSON.stringify([...this.seenIds])
-    );
   }
 }
