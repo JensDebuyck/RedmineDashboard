@@ -1,0 +1,13 @@
+directories:
+  output: release
+  buildResources: build
+appId: com.jens.redminedashboard
+productName: Redmine Dashboard
+files:
+  - filter:
+      - dist/frontend/**/*
+      - electron/**/*
+      - node_modules/**/*
+win:
+  target: nsis
+electronVersion: 41.4.0
