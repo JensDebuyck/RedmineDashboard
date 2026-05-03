@@ -1,0 +1,89 @@
+<div class="my-tickets-page">
+
+  <nav class="nav-links">
+    <a routerLink="/dashboard"  routerLinkActive="active">📋 Tickets</a>
+    <a routerLink="/my-tickets" routerLinkActive="active">🎯 My Tickets</a>
+    <a routerLink="/stats"      routerLinkActive="active">📊 Stats</a>
+    <a routerLink="/notes"      routerLinkActive="active">📝 Notes</a>
+  </nav>
+
+  <h1>🎯 My Tickets</h1>
+
+  @if (loading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading tickets...</p>
+    </div>
+  }
+
+  @if (error) {
+    <div class="error">⚠️ {{ error }}</div>
+  }
+
+  @if (!loading && !error) {
+
+    @if (rows.length === 0) {
+      <p>No tickets assigned to you.</p>
+    }
+
+    @if (rows.length > 0) {
+      <table class="tickets-table">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>Project</th>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Total time</th>
+          <th>Session</th>
+          <th>Timer</th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (row of rows; track row.issue.id) {
+            <tr [class.running]="row.running">
+              <td>
+                <a href="https://redmine.trustteam.be/issues/{{ row.issue.id }}"
+                   target="_blank"
+                   class="ticket-id">
+                  #{{ row.issue.id }}
+                </a>
+              </td>
+              <td>{{ row.issue.project.name }}</td>
+              <td class="title-cell">{{ row.issue.subject }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(row.issue.status.name)">
+                  {{ row.issue.status.name }}
+                </span>
+              </td>
+              <td>
+                <span class="priority-badge" [ngClass]="getPriorityClass(row.issue.priority)">
+                  {{ row.issue.priority.name }}
+                </span>
+              </td>
+              <td class="time-cell">
+                {{ formatTime(row.totalSeconds) }}
+              </td>
+              <td class="time-cell">
+                @if (row.running) {
+                  {{ formatTime(row.elapsed) }}
+                } @else {
+                  —
+                }
+              </td>
+              <td class="timer-cell">
+                @if (!row.running) {
+                  <button class="btn-play" (click)="startTimer(row)">▶ Start</button>
+                } @else {
+                  <button class="btn-stop" (click)="stopTimer(row)">⏹ Stop</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+
+</div>

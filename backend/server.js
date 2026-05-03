@@ -16,124 +16,78 @@ let cache = null;
 let cacheTime = null;
 const CACHE_TTL = 5 * 60 * 1000;
 
-// 🧠 Seen issues (prevent double counting)
-const seenIssues = new Map();
+let myTicketsCache = null;
+let myTicketsCacheTime = null;
 
-// 📊 Daily stats store
+const seenIssues = new Map();
 const dailyStatsStore = {};
 
 // -----------------------------
 // REDMINE FETCH
 // -----------------------------
-async function fetchIssues(url, apiKey, offset = 0, limit = 100) {
+async function fetchIssues(url, apiKey, offset = 0, limit = 100, extraParams = {}) {
     const fetchUrl = new URL(url);
     fetchUrl.searchParams.set('key', apiKey);
     fetchUrl.searchParams.set('limit', limit);
     fetchUrl.searchParams.set('offset', offset);
 
+    for (const [key, value] of Object.entries(extraParams)) {
+        fetchUrl.searchParams.set(key, value);
+    }
+
     const response = await fetch(fetchUrl.toString());
     if (!response.ok) throw new Error(`Redmine error: ${response.statusText}`);
 
-    const text = await response.text();
-    return JSON.parse(text);
+    return JSON.parse(await response.text());
 }
 
 // -----------------------------
-// STATS BUILDER (EVENT BASED)
+// STATS BUILDER
 // -----------------------------
 function processIssuesForStats(issues) {
     for (const issue of issues) {
         if (!issue?.id || !issue?.created_on) continue;
-
-        // ❌ al gezien → skip
         if (seenIssues.has(issue.id)) continue;
 
-        // mark as seen
         seenIssues.set(issue.id, true);
 
-        // extract date
-        const dateKey = new Date(issue.created_on)
-            .toISOString()
-            .split('T')[0];
-
-        // increment counter
+        const dateKey = new Date(issue.created_on).toISOString().split('T')[0];
         dailyStatsStore[dateKey] = (dailyStatsStore[dateKey] || 0) + 1;
     }
 }
 
 // -----------------------------
-// MAIN API
+// GET ALL ISSUES
 // -----------------------------
 app.get('/api/issues', async (req, res) => {
     try {
-        // cache check (UI performance)
         if (cache && cacheTime && Date.now() - cacheTime < CACHE_TTL) {
             console.log('📦 Serving from cache');
-            return res.json({
-                issues: cache.issues,
-                total: cache.total,
-                dailyStats: dailyStatsStore
-            });
+            return res.json({ issues: cache.issues, total: cache.total, dailyStats: dailyStatsStore });
         }
 
         console.log('📡 Fetching from Redmine...');
 
-        // first page
-        const first = await fetchIssues(
-            process.env.REDMINE_URL,
-            process.env.REDMINE_API_KEY,
-            0,
-            100
-        );
-
+        const first = await fetchIssues(process.env.REDMINE_URL, process.env.REDMINE_API_KEY, 0, 100);
         const totalCount = first.total_count ?? first.issues.length;
-        const limit = 100;
-        const pages = Math.ceil(totalCount / limit);
-
+        const pages = Math.ceil(totalCount / 100);
         let allIssues = [...first.issues];
 
-        // remaining pages
         if (pages > 1) {
-            const requests = [];
-
-            for (let i = 1; i < pages; i++) {
-                requests.push(
-                    fetchIssues(
-                        process.env.REDMINE_URL,
-                        process.env.REDMINE_API_KEY,
-                        i * limit,
-                        limit
-                    )
-                );
-            }
-
-            const results = await Promise.all(requests);
-
-            allIssues = [
-                ...allIssues,
-                ...results.flatMap(r => r.issues),
-            ];
+            const results = await Promise.all(
+                Array.from({ length: pages - 1 }, (_, i) =>
+                    fetchIssues(process.env.REDMINE_URL, process.env.REDMINE_API_KEY, (i + 1) * 100, 100)
+                )
+            );
+            allIssues = [...allIssues, ...results.flatMap(r => r.issues)];
         }
 
-        // -----------------------------
-        // PROCESS STATS (IMPORTANT)
-        // -----------------------------
         processIssuesForStats(allIssues);
 
-        // update cache (UI only)
-        cache = {
-            issues: allIssues,
-            total: totalCount
-        };
-
+        cache = { issues: allIssues, total: totalCount };
         cacheTime = Date.now();
 
-        res.json({
-            issues: allIssues,
-            total: totalCount,
-            dailyStats: dailyStatsStore
-        });
-
+        res.json({ issues: allIssues, total: totalCount, dailyStats: dailyStatsStore });
     } catch (err) {
         console.error('❌ Fetch error:', err.message);
         res.status(500).json({ error: 'Failed to reach Redmine API' });
@@ -141,6 +95,59 @@ app.get('/api/issues', async (req, res) => {
 });
 
 // -----------------------------
+// GET MY TICKETS
+// -----------------------------
+app.get('/api/my-tickets', async (req, res) => {
+    try {
+        if (myTicketsCache && myTicketsCacheTime && Date.now() - myTicketsCacheTime < CACHE_TTL) {
+            console.log('📦 My tickets from cache');
+            return res.json({ issues: myTicketsCache });
+        }
+
+        console.log('📡 Fetching my tickets from Redmine...');
+
+        const first = await fetchIssues(
+            process.env.REDMINE_URL,
+            process.env.REDMINE_API_KEY,
+            0, 100,
+            {
+                'assigned_to_id': process.env.REDMINE_USER_ID,
+                'status_id':      'open',
+                'sort':           'status,priority:desc,updated_on:desc'
+            }
+        );
+
+        const totalCount = first.total_count ?? first.issues.length;
+        const pages = Math.ceil(totalCount / 100);
+        let allIssues = [...first.issues];
+
+        if (pages > 1) {
+            const results = await Promise.all(
+                Array.from({ length: pages - 1 }, (_, i) =>
+                    fetchIssues(
+                        process.env.REDMINE_URL,
+                        process.env.REDMINE_API_KEY,
+                        (i + 1) * 100, 100,
+                        {
+                            'assigned_to_id': process.env.REDMINE_USER_ID,
+                            'status_id':      'open',
+                        }
+                    )
+                )
+            );
+            allIssues = [...allIssues, ...results.flatMap(r => r.issues)];
+        }
+
+        myTicketsCache = allIssues;
+        myTicketsCacheTime = Date.now();
+
+        res.json({ issues: allIssues });
+    } catch (err) {
+        console.error('❌ My tickets fetch error:', err.message);
+        res.status(500).json({ error: 'Failed to fetch my tickets' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });

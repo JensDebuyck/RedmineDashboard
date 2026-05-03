@@ -5,12 +5,12 @@ import { Issue } from '../issue.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
-export class IssueService {
-  private apiUrl = `${environment.apiUrl}/api/issues`;
+export class MyTicketsService {
+  private apiUrl = `${environment.apiUrl}/api/my-tickets`;
 
   constructor(private http: HttpClient) {}
 
-  getIssues(): Observable<{ issues: Issue[] }> {
+  getMyTickets(): Observable<{ issues: Issue[] }> {
     return this.http.get<{ issues: Issue[] }>(this.apiUrl);
   }
 }
