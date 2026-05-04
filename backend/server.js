@@ -1,10 +1,18 @@
 import express from 'express';
 import cors from 'cors';
-import 'dotenv/config';
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+
+const env = process.env.NODE_ENV || 'development';
+dotenv.config({
+    path: env === 'production' ? '.env' : '.env.development'
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -16,7 +24,9 @@ let cache = null;
 let cacheTime = null;
 const CACHE_TTL = 5 * 60 * 1000;
 
-let myTicketsCache = null;
+let myTicketsCache = allIssues.filter(issue =>
+    issue.assigned_to?.id === parseInt(process.env.REDMINE_USER_ID)
+);
 let myTicketsCacheTime = null;
 
 const seenIssues = new Map();
@@ -107,7 +117,7 @@ app.get('/api/my-tickets', async (req, res) => {
         console.log('📡 Fetching my tickets from Redmine...');
 
         const first = await fetchIssues(
-            process.env.REDMINE_URL,
+            process.env.REDMINE_BASE_URL,
             process.env.REDMINE_API_KEY,
             0, 100,
             {
@@ -125,7 +135,7 @@ app.get('/api/my-tickets', async (req, res) => {
             const results = await Promise.all(
                 Array.from({ length: pages - 1 }, (_, i) =>
                     fetchIssues(
-                        process.env.REDMINE_URL,
+                        process.env.REDMINE_BASE_URL,
                         process.env.REDMINE_API_KEY,
                         (i + 1) * 100, 100,
                         {
