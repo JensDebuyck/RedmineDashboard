@@ -6,6 +6,8 @@
   --border: #e5e7eb;
   --primary: #0f766e;
   --primary-soft: #d1fae5;
+  --primary: #2563eb;
+  --primary-soft: #dbeafe;
   --success: #16a34a;
   --danger: #dc2626;
   --warning: #d97706;
@@ -25,6 +27,7 @@ body[data-theme='dark'] {
   --text-muted: #94a3b8;
   --border: #334155;
   --primary-soft: #134e4a;
+  --primary-soft: #1e3a8a;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   --danger: #f87171;
 }
@@ -63,6 +66,8 @@ h1 {
   background: var(--primary-soft);
   border-color: #6ee7b7;
   color: #065f46;
+  border-color: #93c5fd;
+  color: #1d4ed8;
 }
 
 .loading,
