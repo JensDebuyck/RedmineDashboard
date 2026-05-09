@@ -6,6 +6,7 @@ import { Issue } from '../../issue.model';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NotificationService } from '../../services/notification';
 import { NoteService } from '../../services/notes';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,7 +26,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   filterPriority = 'all';
   filterDay      = 'today';
 
-  private intervalId: any;
+  private intervalId?: ReturnType<typeof setInterval>;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private issueService: IssueService,
@@ -41,11 +43,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    clearInterval(this.intervalId);
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private loadIssues(): void {
-    this.issueService.getIssues().subscribe({
+    this.issueService.getIssues().pipe(takeUntil(this.destroy$)).subscribe({
       next: (data) => {
         const issues = data.issues ?? [];
         this.issues = issues;
@@ -135,7 +141,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return map[statusName] ?? 'status-default';
   }
 
-  getAgeClass(issue: any): string {
+  getAgeClass(issue: Issue): string {
     const diffDays = this.getIssueAgeInDays(issue);
     if (diffDays >= 10) return 'ticket-red';
     if (diffDays >= 7)  return 'ticket-orange';
@@ -143,7 +149,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'ticket-green';
   }
 
-  getPriorityClass(priority: any): string {
+  getPriorityClass(priority: Issue['priority']): string {
     switch (priority?.id) {
       case 1: return 'prio-low';
       case 2: return 'prio-normal';
@@ -154,7 +160,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'prio-unknown';
   }
 
-  getIssueAgeInDays(issue: any): number {
+  getIssueAgeInDays(issue: Issue): number {
     const created = new Date(issue.created_on);
     const now = new Date();
     return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
