@@ -3,7 +3,6 @@ import { provideRouter } from '@angular/router';
 
 import { DashboardComponent } from './dashboard';
 
-
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let fixture: ComponentFixture<DashboardComponent>;
