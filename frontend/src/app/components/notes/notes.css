@@ -1,26 +1,12 @@
-.note-card {
-  border: 1px solid #ddd;
-  padding: 12px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  background: #fff;
-}
+.notes-page { padding: 20px; }
 
-.nav-links {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
+.notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.note-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); padding: 12px; box-shadow: var(--shadow); }
 
-.nav-links a {
-  text-decoration: none;
-  color: #555;
-  font-weight: 500;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
+.note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ticket-id { color: #0f766e; font-weight: 600; text-decoration: none; }
+.customer { color: var(--text-muted); font-size: .85rem; }
 
-.nav-links a.active {
-  background: #2196f3;
-  color: white;
-}
+.note-title { margin: 6px 0; font-size: 1rem; }
+.note-body { margin: 0 0 8px; color: #374151; white-space: pre-wrap; }
+.note-footer { color: var(--text-muted); font-size: .8rem; }

@@ -1,0 +1,19 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--bg-page);
+  color: var(--text-main);
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 12px;
+  box-shadow: var(--shadow);
+}
