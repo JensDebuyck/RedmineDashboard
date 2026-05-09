@@ -1,9 +1,12 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { join } = require('path');
 const Database = require('better-sqlite3');
+const { spawn } = require('child_process');
 
 const dbPath = join(app.getPath('userData'), 'redmine.db');
 const db = new Database(dbPath);
+
+let flaskProcess = null;
 
 db.pragma('journal_mode = WAL');
 
@@ -12,30 +15,30 @@ db.pragma('journal_mode = WAL');
 // ─────────────────────────────
 db.exec(`
   CREATE TABLE IF NOT EXISTS notes (
-    ticketId  INTEGER PRIMARY KEY,
-    customer  TEXT,
-    title     TEXT,
-    priority  TEXT,
-    createdAt TEXT,
-    note      TEXT,
-    updatedAt TEXT
+                                     ticketId  INTEGER PRIMARY KEY,
+                                     customer  TEXT,
+                                     title     TEXT,
+                                     priority  TEXT,
+                                     createdAt TEXT,
+                                     note      TEXT,
+                                     updatedAt TEXT
   );
 
   CREATE TABLE IF NOT EXISTS stats (
-    dateKey TEXT PRIMARY KEY,
-    count   INTEGER DEFAULT 0
+                                     dateKey TEXT PRIMARY KEY,
+                                     count   INTEGER DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS seen_ids (
-    ticketId INTEGER PRIMARY KEY
+                                        ticketId INTEGER PRIMARY KEY
   );
 
   CREATE TABLE IF NOT EXISTS time_entries (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    ticketId        INTEGER NOT NULL,
-    startedAt       TEXT NOT NULL,
-    stoppedAt       TEXT,
-    seconds         INTEGER DEFAULT 0
+                                            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                                            ticketId        INTEGER NOT NULL,
+                                            startedAt       TEXT NOT NULL,
+                                            stoppedAt       TEXT,
+                                            seconds         INTEGER DEFAULT 0
   );
 `);
 
@@ -116,18 +119,14 @@ ipcMain.handle('save-seen-ids', (_, ids) => {
 // ─────────────────────────────
 // TIMER
 // ─────────────────────────────
-
-// Start een nieuwe tijdregistratie, geeft het id terug
 ipcMain.handle('start-timer', (_, ticketId) => {
   const result = db.prepare(`
     INSERT INTO time_entries (ticketId, startedAt)
     VALUES (?, ?)
   `).run(ticketId, new Date().toISOString());
-
   return result.lastInsertRowid;
 });
 
-// Stop een tijdregistratie, elapsed seconds komen van de frontend
 ipcMain.handle('stop-timer', (_, entryId, seconds) => {
   db.prepare(`
     UPDATE time_entries
@@ -137,7 +136,6 @@ ipcMain.handle('stop-timer', (_, entryId, seconds) => {
   return true;
 });
 
-// Totaal aantal seconden voor een ticket (alle afgesloten entries)
 ipcMain.handle('get-total-time', (_, ticketId) => {
   const row = db.prepare(`
     SELECT COALESCE(SUM(seconds), 0) as total
@@ -147,7 +145,6 @@ ipcMain.handle('get-total-time', (_, ticketId) => {
   return row?.total ?? 0;
 });
 
-// Alle losse tijdregistraties voor een ticket
 ipcMain.handle('get-time-entries', (_, ticketId) => {
   return db.prepare(`
     SELECT id, startedAt, stoppedAt, seconds
@@ -156,6 +153,26 @@ ipcMain.handle('get-time-entries', (_, ticketId) => {
     ORDER BY startedAt DESC
   `).all(ticketId);
 });
+
+// ─────────────────────────────
+// FLASK
+// ─────────────────────────────
+function startFlask() {
+  const isPackaged = app.isPackaged;
+
+  const scriptPath = isPackaged
+    ? join(process.resourcesPath, 'redmine_proxy.py')
+    : join(__dirname, '..', 'redmine_proxy.py');
+
+  flaskProcess = spawn('python', [scriptPath], {
+    stdio: 'ignore',
+    detached: false
+  });
+
+  flaskProcess.on('error', (err) => {
+    console.error('❌ Flask kon niet starten:', err.message);
+  });
+}
 
 // ─────────────────────────────
 // WINDOW
@@ -172,11 +189,21 @@ function createWindow() {
   });
 
   mainWindow.loadFile(join(__dirname, '../dist/frontend/browser/index.html'));
-  mainWindow.webContents.openDevTools();
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  startFlask();
+  // Klein delay zodat Flask tijd heeft om op te starten
+  setTimeout(createWindow, 1500);
+
+  const { shell } = require('electron');
+
+  ipcMain.handle('open-external', (_, url) => {
+    shell.openExternal(url);
+  })
+});
 
 app.on('window-all-closed', () => {
+  if (flaskProcess) flaskProcess.kill();
   if (process.platform !== 'darwin') app.quit();
 });

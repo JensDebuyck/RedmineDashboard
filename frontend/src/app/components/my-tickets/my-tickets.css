@@ -54,6 +54,7 @@
   border: none;
   padding: 6px 10px;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .btn-stop {
@@ -62,33 +63,34 @@
   border: none;
   padding: 6px 10px;
   cursor: pointer;
+  border-radius: 4px;
 }
 
-/* STATUS */
-.status-new { background: #3498db; color: white; padding: 3px 8px; border-radius: 6px; }
-.status-progress { background: #f1c40f; color: black; padding: 3px 8px; border-radius: 6px; }
-.status-resolved { background: #2ecc71; color: white; padding: 3px 8px; border-radius: 6px; }
-.status-closed { background: #7f8c8d; color: white; padding: 3px 8px; border-radius: 6px; }
-.status-feedback { background: #9b59b6; color: white; padding: 3px 8px; border-radius: 6px; }
+/* STATUS BADGES */
+.status-new              { background: #3498db; color: white;  padding: 3px 8px; border-radius: 6px; }
+.status-progress         { background: #f1c40f; color: black;  padding: 3px 8px; border-radius: 6px; }
+.status-resolved         { background: #2ecc71; color: white;  padding: 3px 8px; border-radius: 6px; }
+.status-closed           { background: #7f8c8d; color: white;  padding: 3px 8px; border-radius: 6px; }
+.status-feedback-customer{ background: #9b59b6; color: white;  padding: 3px 8px; border-radius: 6px; }
+.status-pending-customer { background: #e67e22; color: white;  padding: 3px 8px; border-radius: 6px; }
+.status-pending-subtask  { background: #1abc9c; color: white;  padding: 3px 8px; border-radius: 6px; }
+.status-onhold           { background: #95a5a6; color: white;  padding: 3px 8px; border-radius: 6px; }
+.status-default          { background: #ecf0f1; color: #333;   padding: 3px 8px; border-radius: 6px; }
 
 /* PRIORITY */
-.prio-low { color: green; }
+.prio-low    { color: green; }
 .prio-normal { color: #333; }
-.prio-high { color: red; }
+.prio-high   { color: red; }
 
 /* AGE COLORS */
-.ticket-green {
-  border-left: 4px solid #2ecc71;
-}
+.ticket-green  { border-left: 4px solid #2ecc71; }
+.ticket-yellow { border-left: 4px solid #f1c40f; }
+.ticket-orange { border-left: 4px solid #e67e22; }
+.ticket-red    { border-left: 4px solid #e74c3c; }
 
-.ticket-yellow {
-  border-left: 4px solid #f1c40f;
-}
-
-.ticket-orange {
-  border-left: 4px solid #e67e22;
-}
-
-.ticket-red {
-  border-left: 4px solid #e74c3c;
+.ticket-id {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+  user-select: none;
 }

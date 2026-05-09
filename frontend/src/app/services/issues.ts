@@ -6,11 +6,11 @@ import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class IssueService {
-  private apiUrl = `${environment.apiUrl}/api/issues`;
+  private apiUrl = `${environment.apiUrl}/projects/software-kortrijk/issues.json?query_id=1601&sort=start_date%3Adesc%2Cpriority%3Adesc%2Ccreated_on`;
 
   constructor(private http: HttpClient) {}
 
-  getIssues(): Observable<{ issues: Issue[] }> {
-    return this.http.get<{ issues: Issue[] }>(this.apiUrl);
+  getIssues(): Observable<{ issues: Issue[]; total_count: number }> {
+    return this.http.get<{ issues: Issue[]; total_count: number }>(this.apiUrl);
   }
 }

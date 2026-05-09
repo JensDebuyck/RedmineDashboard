@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { IssueService } from '../../services/issues';
+import { StatsService} from '../../services/stats';
 
 @Component({
   selector: 'app-stats',
@@ -19,14 +19,14 @@ export class StatsComponent implements OnInit, OnDestroy {
   private refreshInterval: any;
 
   constructor(
-    private issueService: IssueService,
+    private statsService: StatsService,
     private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadFromSQLite();
-    this.loadIssues();
-    this.refreshInterval = setInterval(() => this.loadIssues(), 30000);
+    this.loadStats();
+    this.refreshInterval = setInterval(() => this.loadStats(), 60000);
   }
 
   ngOnDestroy(): void {
@@ -42,7 +42,6 @@ export class StatsComponent implements OnInit, OnDestroy {
       this.statsStore = await api.getStats();
       const ids = await api.getSeenIds();
       this.seenIds = new Set(ids);
-      console.log('✅ Stats geladen uit SQLite');
     } catch (err) {
       console.warn('⚠️ SQLite niet bereikbaar', err);
     }
@@ -51,11 +50,9 @@ export class StatsComponent implements OnInit, OnDestroy {
   private async saveToSQLite(newIds: number[]): Promise<void> {
     try {
       const api = (window as any).electronAPI;
-      // Stats opslaan
       for (const [dateKey, count] of Object.entries(this.statsStore)) {
         await api.saveStat(dateKey, count);
       }
-      // Nieuwe seen IDs opslaan
       if (newIds.length > 0) {
         await api.saveSeenIds(newIds);
       }
@@ -67,8 +64,8 @@ export class StatsComponent implements OnInit, OnDestroy {
   // -----------------------------
   // FETCH + COUNT
   // -----------------------------
-  private loadIssues(): void {
-    this.issueService.getIssues().subscribe({
+  private loadStats(): void {
+    this.statsService.getStatsIssues().subscribe({
       next: async (data) => {
         const issues = data?.issues ?? [];
         const newIds: number[] = [];
@@ -91,7 +88,7 @@ export class StatsComponent implements OnInit, OnDestroy {
         this.buildDisplayStats();
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('❌ Failed to load issues', err)
+      error: (err) => console.error('❌ Failed to load stats', err)
     });
   }
 

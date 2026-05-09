@@ -12,12 +12,15 @@
   <div class="filters">
     <label>Status:</label>
     <select [(ngModel)]="filterStatus">
+      <option value="active">Active (excl. Resolved)</option>
       <option value="all">All</option>
       <option value="New">New</option>
       <option value="In Progress">In Progress</option>
       <option value="Resolved">Resolved</option>
-      <option value="Closed">Closed</option>
-      <option value="Feedback">Feedback</option>
+      <option value="Feedback Customer">Feedback Customer</option>
+      <option value="Pending Customer">Pending Customer</option>
+      <option value="Pending Subtask">Pending Subtask</option>
+      <option value="OnHold">OnHold</option>
     </select>
   </div>
 
@@ -56,14 +59,13 @@
 
         <tbody>
           @for (row of getFilteredRows(); track row.issue.id) {
-            <tr [class.running]="row.running" [ngClass]="getAgeClass(row)">
+            <tr [class.running]="timerService.isRunning(row.issue.id)"
+                [ngClass]="getAgeClass(row)">
 
               <td>
-                <a href="https://redmine.trustteam.be/issues/{{ row.issue.id }}"
-                   target="_blank"
-                   class="ticket-id">
+                <span class="ticket-id" (click)="openTicket(row.issue.id)">
                   #{{ row.issue.id }}
-                </a>
+                </span>
               </td>
 
               <td>{{ row.issue.project.name }}</td>
@@ -83,23 +85,23 @@
               </td>
 
               <td class="time-cell">
-                {{ formatTime(row.totalSeconds) }}
+                {{ formatTime(timerService.getState(row.issue.id).totalSeconds) }}
               </td>
 
               <td class="time-cell">
-                @if (row.running) {
-                  {{ formatTime(row.sessionSeconds) }}
+                @if (timerService.isRunning(row.issue.id)) {
+                  {{ formatTime(timerService.getState(row.issue.id).sessionSeconds) }}
                 } @else {
                   —
                 }
               </td>
 
               <td class="time-cell">
-                {{ formatTime(row.lastSessionSeconds) }}
+                {{ formatTime(timerService.getState(row.issue.id).lastSessionSeconds) }}
               </td>
 
               <td class="timer-cell">
-                @if (!row.running) {
+                @if (!timerService.isRunning(row.issue.id)) {
                   <button class="btn-play" (click)="startTimer(row)">▶ Start</button>
                 } @else {
                   <button class="btn-stop" (click)="stopTimer(row)">⏹ Stop</button>

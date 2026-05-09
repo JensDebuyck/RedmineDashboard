@@ -49,6 +49,12 @@
       "electron/**/*",
       "node_modules/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "redmine_proxy.py",
+        "to": "redmine_proxy.py"
+      }
+    ],
     "win": {
       "target": "nsis"
     }

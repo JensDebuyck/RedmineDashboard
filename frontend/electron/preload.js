@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+
 contextBridge.exposeInMainWorld('electronAPI', {
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
   // Notes
   getNote:        (ticketId)        => ipcRenderer.invoke('get-note', ticketId),
   saveNote:       (ticket)          => ipcRenderer.invoke('save-note', ticket),
@@ -17,4 +19,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   stopTimer:      (entryId, secs)   => ipcRenderer.invoke('stop-timer', entryId, secs),
   getTotalTime:   (ticketId)        => ipcRenderer.invoke('get-total-time', ticketId),
   getTimeEntries: (ticketId)        => ipcRenderer.invoke('get-time-entries', ticketId),
+
 });

@@ -92,8 +92,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getFilteredIssues(): Issue[] {
-    return this.issues.filter(issue => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+    return this.issues.filter(issue => {
       if (this.filterStatus !== 'all' &&
         issue.status.name.toLowerCase() !== this.filterStatus) return false;
 
@@ -109,13 +111,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       }
 
+      const createdStr = issue.created_on.split('T')[0];
       const age = this.getIssueAgeInDays(issue);
-      if (this.filterDay === 'today'  && age > 1)  return false;
-      if (this.filterDay === 'week'   && age > 7)  return false;
-      if (this.filterDay === 'month'  && age > 30) return false;
+
+      if (this.filterDay === 'today' && createdStr !== todayStr) return false;
+      if (this.filterDay === 'week'  && age > 7)  return false;
+      if (this.filterDay === 'month' && age > 30) return false;
 
       return true;
-    });
+    }).sort((a, b) =>
+      new Date(b.created_on).getTime() - new Date(a.created_on).getTime()
+    );
   }
 
   getStatusClass(statusName: string): string {

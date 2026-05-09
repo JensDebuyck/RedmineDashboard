@@ -8,6 +8,9 @@ files:
       - dist/frontend/**/*
       - electron/**/*
       - node_modules/**/*
+extraResources:
+  - from: redmine_proxy.py
+    to: redmine_proxy.py
 win:
   target: nsis
 electronVersion: 41.4.0
