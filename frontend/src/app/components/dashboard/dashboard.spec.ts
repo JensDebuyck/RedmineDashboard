@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { DashboardComponent } from './dashboard';
-import { Issue } from '../../issue.model';
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
