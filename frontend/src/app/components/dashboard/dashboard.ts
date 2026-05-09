@@ -24,7 +24,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   filterStatus   = 'all';
   filterPriority = 'all';
-  filterDay      = 'today';
+  filterDay      = 'all';
 
   private intervalId?: ReturnType<typeof setInterval>;
   private readonly destroy$ = new Subject<void>();
@@ -102,13 +102,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     return this.issues.filter(issue => {
-      if (this.filterStatus !== 'all' &&
-        issue.status.name.toLowerCase() !== this.filterStatus) return false;
+      const normalizedStatus = issue.status?.name?.trim().toLowerCase() ?? '';
+      if (this.filterStatus !== 'all' && normalizedStatus !== this.filterStatus) {
+        return false;
+      }
 
       if (this.filterPriority !== 'all') {
         const prioId = issue.priority?.id?.toString();
-        const prioName = issue.priority?.name || '';
-        const isUnknownPrio = prioName.trim() === '/';
+        const prioName = issue.priority?.name?.trim() ?? '';
+        const isUnknownPrio = !prioId || prioName === '/' || prioName.length === 0;
 
         if (this.filterPriority === 'unknown') {
           if (!isUnknownPrio) return false;
@@ -117,7 +119,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       }
 
-      const createdStr = issue.created_on.split('T')[0];
+      const createdStr = issue.created_on?.split('T')[0];
       const age = this.getIssueAgeInDays(issue);
 
       if (this.filterDay === 'today' && createdStr !== todayStr) return false;
@@ -151,8 +153,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   getPriorityClass(priority: Issue['priority']): string {
     switch (priority?.id) {
-      case 1: return 'prio-low';
-      case 2: return 'prio-normal';
+      case 1: return 'prio-immediate';
+      case 2: return 'prio-urgent';
       case 3: return 'prio-high';
       case 4: return 'prio-normal';
       case 5: return 'prio-low';
