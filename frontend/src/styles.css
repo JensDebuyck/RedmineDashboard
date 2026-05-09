@@ -15,11 +15,26 @@
 
 * { box-sizing: border-box; }
 
+:root.dark-theme,
+body.dark-theme,
+:root[data-theme='dark'],
+body[data-theme='dark'] {
+  --bg-page: #0b1220;
+  --bg-card: #111827;
+  --text-main: #e5e7eb;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --primary-soft: #1e3a8a;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --danger: #f87171;
+}
+
 body {
   margin: 0;
   font-family: Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg-page);
   color: var(--text-main);
+  transition: background-color .2s ease, color .2s ease;
 }
 
 h1 {
@@ -68,4 +83,23 @@ button {
   border-radius: 10px;
   padding: 8px 12px;
   cursor: pointer;
+}
+
+/* Global dark-mode readability tweaks */
+.dark-theme .filters select,
+.dark-theme textarea {
+  background: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border) !important;
+}
+
+.dark-theme .tickets-table th {
+  background: #0f172a !important;
+}
+
+.dark-theme .status,
+.dark-theme .priority,
+.dark-theme .status-badge,
+.dark-theme .priority-badge {
+  border: 1px solid var(--border);
 }

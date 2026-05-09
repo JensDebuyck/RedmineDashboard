@@ -24,6 +24,11 @@ export class App implements OnInit {
   }
 
   private applyTheme(): void {
+    const theme = this.isDarkMode ? 'dark' : 'light';
+    document.body.classList.toggle('dark-theme', this.isDarkMode);
+    document.documentElement.classList.toggle('dark-theme', this.isDarkMode);
+    document.body.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
     document.body.classList.toggle('dark-theme', this.isDarkMode);
   }
 }
