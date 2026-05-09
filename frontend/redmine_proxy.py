@@ -1,9 +1,15 @@
 # redmine_proxy.py
-import os, requests, math
+import os, requests, math, datetime
 from flask import Flask, request, Response, jsonify
+from dotenv import load_dotenv
 
-API_KEY = os.environ.get("REDMINE_KEY") or "9bfdf5b21b2e574ccb9478d1d7812cedef1bb554"
+load_dotenv()
+
+API_KEY = os.environ.get("REDMINE_KEY")
 BASE = "https://redmine.trustteam.be"
+
+if not API_KEY:
+    raise ValueError("REDMINE_KEY is not set in environment variables")
 
 app = Flask(__name__)
 
@@ -72,24 +78,29 @@ def issues_stats():
 
     all_issues = []
     offset = 0
+    total = None
 
     while True:
         r = requests.get(url, params={
-            "created_on": f">={thirty_days_ago}",
+            "query_id": "1601",
             "status_id": "*",
             "limit": 100,
             "offset": offset
         }, headers=headers, timeout=20).json()
 
         issues = r.get("issues", [])
+        if total is None:
+            total = r.get("total_count", 0)
+
         all_issues.extend(issues)
-        total = r.get("total_count", 0)
         offset += 100
 
-        if offset >= total:
+        if not issues or offset >= total:
             break
 
-    return jsonify({"issues": all_issues, "total_count": len(all_issues)})
+    filtered = [i for i in all_issues if i.get("created_on", "")[:10] >= thirty_days_ago]
+
+    return jsonify({"issues": filtered, "total_count": len(filtered)})  # ← deze regel miste!
 
 if __name__ == "__main__":
     app.run(port=5000)
