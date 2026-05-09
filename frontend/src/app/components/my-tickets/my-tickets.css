@@ -1,96 +1,37 @@
-.my-tickets-page {
-  padding: 20px;
-}
+.my-tickets-page { padding: 20px; }
 
-.nav-links {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-}
+.filters { margin: 12px 0; display: flex; align-items: center; gap: 8px; }
+.filters select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
 
-.nav-links a {
-  text-decoration: none;
-  color: #444;
-}
+.tickets-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.tickets-table th, .tickets-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+.tickets-table th { background: #f8fafc; font-size: .85rem; color: var(--text-muted); }
 
-.nav-links a.active {
-  font-weight: bold;
-  color: #007bff;
-}
+.title-cell { max-width: 360px; }
+.time-cell { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.timer-cell { white-space: nowrap; }
 
-.filters {
-  margin-bottom: 15px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
+.ticket-id { color: #1d4ed8; text-decoration: underline; cursor: pointer; }
+.status-badge,.priority-badge { border-radius: 999px; padding: 3px 8px; font-size: .75rem; font-weight: 600; }
 
-.tickets-table {
-  width: 100%;
-  border-collapse: collapse;
-}
+.btn-play { background: #16a34a; color: #fff; }
+.btn-stop { background: #dc2626; color: #fff; }
 
-.tickets-table th,
-.tickets-table td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
+.status-new { background: #dbeafe; color: #1d4ed8; }
+.status-progress { background: #fef3c7; color: #92400e; }
+.status-resolved { background: #dcfce7; color: #166534; }
+.status-closed { background: #e5e7eb; color: #374151; }
+.status-feedback-customer { background: #f3e8ff; color: #6b21a8; }
+.status-pending-customer { background: #ffedd5; color: #9a3412; }
+.status-pending-subtask { background: #ccfbf1; color: #115e59; }
+.status-onhold { background: #f1f5f9; color: #334155; }
+.status-default { background: #f3f4f6; color: #374151; }
 
-.title-cell {
-  max-width: 300px;
-}
+.prio-low { color: #166534; background: #dcfce7; }
+.prio-normal { color: #1f2937; background: #f3f4f6; }
+.prio-high { color: #991b1b; background: #fee2e2; }
 
-.time-cell {
-  font-family: monospace;
-}
-
-.timer-cell {
-  white-space: nowrap;
-}
-
-.btn-play {
-  background: #2ecc71;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.btn-stop {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-/* STATUS BADGES */
-.status-new              { background: #3498db; color: white;  padding: 3px 8px; border-radius: 6px; }
-.status-progress         { background: #f1c40f; color: black;  padding: 3px 8px; border-radius: 6px; }
-.status-resolved         { background: #2ecc71; color: white;  padding: 3px 8px; border-radius: 6px; }
-.status-closed           { background: #7f8c8d; color: white;  padding: 3px 8px; border-radius: 6px; }
-.status-feedback-customer{ background: #9b59b6; color: white;  padding: 3px 8px; border-radius: 6px; }
-.status-pending-customer { background: #e67e22; color: white;  padding: 3px 8px; border-radius: 6px; }
-.status-pending-subtask  { background: #1abc9c; color: white;  padding: 3px 8px; border-radius: 6px; }
-.status-onhold           { background: #95a5a6; color: white;  padding: 3px 8px; border-radius: 6px; }
-.status-default          { background: #ecf0f1; color: #333;   padding: 3px 8px; border-radius: 6px; }
-
-/* PRIORITY */
-.prio-low    { color: green; }
-.prio-normal { color: #333; }
-.prio-high   { color: red; }
-
-/* AGE COLORS */
-.ticket-green  { border-left: 4px solid #2ecc71; }
-.ticket-yellow { border-left: 4px solid #f1c40f; }
-.ticket-orange { border-left: 4px solid #e67e22; }
-.ticket-red    { border-left: 4px solid #e74c3c; }
-
-.ticket-id {
-  cursor: pointer;
-  color: #007bff;
-  text-decoration: underline;
-  user-select: none;
-}
+.ticket-green { border-left: 4px solid #16a34a; }
+.ticket-yellow { border-left: 4px solid #eab308; }
+.ticket-orange { border-left: 4px solid #d97706; }
+.ticket-red { border-left: 4px solid #dc2626; }
