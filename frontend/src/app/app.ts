@@ -29,5 +29,6 @@ export class App implements OnInit {
     document.documentElement.classList.toggle('dark-theme', this.isDarkMode);
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.toggle('dark-theme', this.isDarkMode);
   }
 }

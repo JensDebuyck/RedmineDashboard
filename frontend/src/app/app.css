@@ -1,10 +1,3 @@
-:host {
-  display: block;
-  min-height: 100vh;
-  background: var(--bg-page);
-  color: var(--text-main);
-}
-
 .theme-toggle {
   position: fixed;
   top: 12px;
