@@ -20,4 +20,12 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
+
+  it('should apply dark theme attributes when toggled', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    app.toggleTheme();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(document.body.getAttribute('data-theme')).toBe('dark');
+  });
 });
