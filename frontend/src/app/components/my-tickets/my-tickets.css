@@ -12,12 +12,14 @@
 .timer-cell { white-space: nowrap; }
 
 .ticket-id { color: #0f766e; text-decoration: underline; cursor: pointer; }
+.ticket-id { color: #1d4ed8; text-decoration: underline; cursor: pointer; }
 .status-badge,.priority-badge { border-radius: 999px; padding: 3px 8px; font-size: .75rem; font-weight: 600; }
 
 .btn-play { background: #16a34a; color: #fff; }
 .btn-stop { background: #dc2626; color: #fff; }
 
 .status-new { background: #ecfeff; color: #155e75; }
+.status-new { background: #dbeafe; color: #1d4ed8; }
 .status-progress { background: #fef3c7; color: #92400e; }
 .status-resolved { background: #dcfce7; color: #166534; }
 .status-closed { background: #e5e7eb; color: #374151; }
