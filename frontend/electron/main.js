@@ -158,11 +158,12 @@ ipcMain.handle('get-time-entries', (_, ticketId) => {
 // ─────────────────────────────
 // FLASK
 // ─────────────────────────────
+const FLASK_URL = 'http://127.0.0.1:5000'; // pas aan indien nodig
+
 function startFlask() {
   if (flaskProcess) return;
 
   const isPackaged = app.isPackaged;
-
   const scriptPath = isPackaged
     ? join(process.resourcesPath, 'redmine_proxy.py')
     : join(__dirname, '..', 'redmine_proxy.py');
@@ -175,9 +176,7 @@ function startFlask() {
   flaskProcess.on('exit', () => {
     flaskProcess = null;
     if (!isQuitting) {
-      setTimeout(() => {
-        startFlask();
-      }, 1000);
+      setTimeout(startFlask, 1000);
     }
   });
 
@@ -186,11 +185,23 @@ function startFlask() {
   });
 }
 
-function ensureFlaskRunning() {
-  if (!flaskProcess) {
-    startFlask();
-  }
+function waitForFlask(retries = 20, delayMs = 500) {
+  return new Promise((resolve, reject) => {
+    const http = require('http');
+
+    function attempt(remaining) {
+      http.get(FLASK_URL, (res) => {
+        resolve(); // Flask reageert → klaar
+      }).on('error', () => {
+        if (remaining <= 0) return reject(new Error('Flask startte niet op tijd'));
+        setTimeout(() => attempt(remaining - 1), delayMs);
+      });
+    }
+
+    attempt(retries);
+  });
 }
+
 
 // ─────────────────────────────
 // WINDOW
@@ -209,16 +220,19 @@ function createWindow() {
   mainWindow.loadFile(join(__dirname, '../dist/frontend/browser/index.html'));
 }
 
-app.whenReady().then(() => {
-  ensureFlaskRunning();
-  // Klein delay zodat Flask tijd heeft om op te starten
-  setTimeout(createWindow, 1500);
+app.whenReady().then(async () => {
+  startFlask();
+
+  try {
+    await waitForFlask();
+  } catch (err) {
+    console.error('⚠️ Flask niet bereikbaar, venster wordt toch geopend:', err.message);
+  }
+
+  createWindow();
 
   const { shell } = require('electron');
-
-  ipcMain.handle('open-external', (_, url) => {
-    shell.openExternal(url);
-  })
+  ipcMain.handle('open-external', (_, url) => shell.openExternal(url));
 });
 
 app.on('activate', () => {
