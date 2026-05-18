@@ -6,6 +6,7 @@ import { Issue } from '../../issue.model';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NotificationService } from '../../services/notification';
 import { NoteService } from '../../services/notes';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -23,9 +24,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   filterStatus   = 'all';
   filterPriority = 'all';
-  filterDay      = 'today';
+  filterDay      = 'all';
 
-  private intervalId: any;
+  private intervalId?: ReturnType<typeof setInterval>;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private issueService: IssueService,
@@ -41,11 +43,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    clearInterval(this.intervalId);
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private loadIssues(): void {
-    this.issueService.getIssues().subscribe({
+    this.issueService.getIssues().pipe(takeUntil(this.destroy$)).subscribe({
       next: (data) => {
         const issues = data.issues ?? [];
         this.issues = issues;
@@ -96,13 +102,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     return this.issues.filter(issue => {
-      if (this.filterStatus !== 'all' &&
-        issue.status.name.toLowerCase() !== this.filterStatus) return false;
+      const normalizedStatus = issue.status?.name?.trim().toLowerCase() ?? '';
+      if (this.filterStatus !== 'all' && normalizedStatus !== this.filterStatus) {
+        return false;
+      }
 
       if (this.filterPriority !== 'all') {
         const prioId = issue.priority?.id?.toString();
-        const prioName = issue.priority?.name || '';
-        const isUnknownPrio = prioName.trim() === '/';
+        const prioName = issue.priority?.name?.trim() ?? '';
+        const isUnknownPrio = !prioId || prioName === '/' || prioName.length === 0;
 
         if (this.filterPriority === 'unknown') {
           if (!isUnknownPrio) return false;
@@ -111,7 +119,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       }
 
-      const createdStr = issue.created_on.split('T')[0];
+      const createdStr = issue.created_on?.split('T')[0];
       const age = this.getIssueAgeInDays(issue);
 
       if (this.filterDay === 'today' && createdStr !== todayStr) return false;
@@ -135,7 +143,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return map[statusName] ?? 'status-default';
   }
 
-  getAgeClass(issue: any): string {
+  getAgeClass(issue: Issue): string {
     const diffDays = this.getIssueAgeInDays(issue);
     if (diffDays >= 10) return 'ticket-red';
     if (diffDays >= 7)  return 'ticket-orange';
@@ -143,10 +151,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'ticket-green';
   }
 
-  getPriorityClass(priority: any): string {
+  getPriorityClass(priority: Issue['priority']): string {
     switch (priority?.id) {
-      case 1: return 'prio-low';
-      case 2: return 'prio-normal';
+      case 1: return 'prio-immediate';
+      case 2: return 'prio-urgent';
       case 3: return 'prio-high';
       case 4: return 'prio-normal';
       case 5: return 'prio-low';
@@ -154,9 +162,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return 'prio-unknown';
   }
 
-  getIssueAgeInDays(issue: any): number {
+  getIssueAgeInDays(issue: Issue): number {
     const created = new Date(issue.created_on);
     const now = new Date();
     return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  openTicket(id: number): void {
+    (window as any).electronAPI.openExternal(
+      `https://redmine.trustteam.be/issues/${id}`
+    );
   }
 }

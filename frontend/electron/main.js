@@ -7,6 +7,7 @@ const dbPath = join(app.getPath('userData'), 'redmine.db');
 const db = new Database(dbPath);
 
 let flaskProcess = null;
+let isQuitting = false;
 
 db.pragma('journal_mode = WAL');
 
@@ -158,6 +159,8 @@ ipcMain.handle('get-time-entries', (_, ticketId) => {
 // FLASK
 // ─────────────────────────────
 function startFlask() {
+  if (flaskProcess) return;
+
   const isPackaged = app.isPackaged;
 
   const scriptPath = isPackaged
@@ -169,9 +172,24 @@ function startFlask() {
     detached: false
   });
 
+  flaskProcess.on('exit', () => {
+    flaskProcess = null;
+    if (!isQuitting) {
+      setTimeout(() => {
+        startFlask();
+      }, 1000);
+    }
+  });
+
   flaskProcess.on('error', (err) => {
     console.error('❌ Flask kon niet starten:', err.message);
   });
+}
+
+function ensureFlaskRunning() {
+  if (!flaskProcess) {
+    startFlask();
+  }
 }
 
 // ─────────────────────────────
@@ -192,7 +210,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  startFlask();
+  ensureFlaskRunning();
   // Klein delay zodat Flask tijd heeft om op te starten
   setTimeout(createWindow, 1500);
 
@@ -203,7 +221,15 @@ app.whenReady().then(() => {
   })
 });
 
+app.on('activate', () => {
+  ensureFlaskRunning();
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
+
 app.on('window-all-closed', () => {
+  isQuitting = true;
   if (flaskProcess) flaskProcess.kill();
   if (process.platform !== 'darwin') app.quit();
 });

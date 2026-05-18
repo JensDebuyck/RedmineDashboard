@@ -38,6 +38,7 @@
 
       <!-- AGE -->
       <select [(ngModel)]="filterDay">
+        <option value="all">All dates</option>
         <option value="today">Today</option>
         <option value="week">Last 7 days</option>
         <option value="month">Last 30 days</option>
@@ -84,7 +85,7 @@
             </span>
 
             <span class="priority"
-                  [ngClass]="getPriorityClass(issue.priority.id)">
+                  [ngClass]="getPriorityClass(issue.priority)">
               {{ issue.priority.name }}
             </span>
 
@@ -98,8 +99,8 @@
           <div class="card-body">
 
             <a class="issue-id"
-               href="https://redmine.trustteam.be/issues/{{ issue.id }}"
-               target="_blank">
+               href="#"
+               (click)="$event.preventDefault(); openTicket(issue.id)">
               #{{ issue.id }}
             </a>
 
