@@ -167,4 +167,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const now = new Date();
     return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
   }
+
+  openTicket(id: number): void {
+    (window as any).electronAPI.openExternal(
+      `https://redmine.trustteam.be/issues/${id}`
+    );
+  }
 }

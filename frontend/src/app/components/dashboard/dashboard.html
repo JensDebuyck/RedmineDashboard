@@ -99,8 +99,8 @@
           <div class="card-body">
 
             <a class="issue-id"
-               href="https://redmine.trustteam.be/issues/{{ issue.id }}"
-               target="_blank">
+               href="#"
+               (click)="$event.preventDefault(); openTicket(issue.id)">
               #{{ issue.id }}
             </a>
 
